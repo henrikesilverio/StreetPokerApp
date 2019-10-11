@@ -13,41 +13,6 @@ const list = [
     avatar_url: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg',
     subtitle: 'Vice Chairman'
   },
-  {
-    name: 'Chris Jackson 2',
-    avatar_url: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg',
-    subtitle: 'Vice Chairman'
-  },
-  {
-    name: 'Chris Jackson 3',
-    avatar_url: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg',
-    subtitle: 'Vice Chairman'
-  },
-  {
-    name: 'Chris Jackson 4',
-    avatar_url: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg',
-    subtitle: 'Vice Chairman'
-  },
-  {
-    name: 'Chris Jackson 5',
-    avatar_url: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg',
-    subtitle: 'Vice Chairman'
-  },
-  {
-    name: 'Chris Jackson 6',
-    avatar_url: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg',
-    subtitle: 'Vice Chairman'
-  },
-  {
-    name: 'Chris Jackson 7',
-    avatar_url: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg',
-    subtitle: 'Vice Chairman'
-  },
-  {
-    name: 'Chris Jackson 8',
-    avatar_url: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg',
-    subtitle: 'Vice Chairman'
-  },
 ];
 
 const Ranking = ({ navigation }) => (
@@ -75,6 +40,7 @@ const Ranking = ({ navigation }) => (
       color='#ffc107'
       containerStyle={styles.icon}
       iconStyle={{ fontSize: 40 }}
+      onPress={()=> navigation.navigate('Position')}
     />
   </SafeAreaView>
 );
