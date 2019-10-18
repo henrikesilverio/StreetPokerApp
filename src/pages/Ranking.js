@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -11,43 +11,7 @@ import {
 import { ListItem } from 'react-native-elements';
 import { Swipeable } from 'react-native-gesture-handler';
 
-const list = [
-  {
-    id: 1,
-    name: 'Amy Farha',
-    avatar_url: 'https://s3.amazonaws.com/uifaces/faces/twitter/ladylexy/128.jpg',
-    subtitle: 'Vice President'
-  },
-  {
-    id: 2,
-    name: 'Chris Jackson 1',
-    avatar_url: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg',
-    subtitle: 'Vice Chairman'
-  },
-];
-
-const onPressFromLeft = (player) => {
-  Alert.alert(
-    'Rebuy',
-    `Confirma o rebuy do ${player.name}?`,
-    [
-      {
-        text: 'Cancelar',
-        onPress: () => console.log('Cancel Pressed'),
-        style: 'cancel',
-      },
-      {
-        text: 'Confirmar', onPress: () => console.log('OK Pressed')
-      },
-    ]
-  );
-}
-
-const onPressFromRight = (player) => {
-  Alert.alert('Eliminação', `Confirma a eliminação do ${player.name} na posição ${list.length}?.`);
-}
-
-const LeftActions = ({ progress, dragX, player }) => {
+const LeftActions = ({ progress, dragX, onPress }) => {
   const scale = dragX.interpolate({
     inputRange: [0, 100],
     outputRange: [0, 1],
@@ -55,7 +19,7 @@ const LeftActions = ({ progress, dragX, player }) => {
   });
 
   return (
-    <TouchableOpacity onPress={() => onPressFromLeft(player)}>
+    <TouchableOpacity onPress={onPress}>
       <View style={styles.leftAction}>
         <Animated.Text
           style={[styles.actionText,
@@ -70,7 +34,7 @@ const LeftActions = ({ progress, dragX, player }) => {
   )
 }
 
-const RightActions = ({ progress, dragX, player }) => {
+const RightActions = ({ progress, dragX, onPress }) => {
   const scale = dragX.interpolate({
     inputRange: [-100, 0],
     outputRange: [1, 0],
@@ -78,7 +42,7 @@ const RightActions = ({ progress, dragX, player }) => {
   });
 
   return (
-    <TouchableOpacity onPress={() => onPressFromRight(player)}>
+    <TouchableOpacity onPress={onPress}>
       <View style={styles.rightAction}>
         <Animated.Text
           style={[styles.actionText,
@@ -93,34 +57,108 @@ const RightActions = ({ progress, dragX, player }) => {
   )
 }
 
-const Ranking = ({ navigation }) => (
-  <SafeAreaView style={styles.container}>
-    <ScrollView>
-      <View>
+const Ranking = ({ navigation }) => {
+  const [players, setPlayers] = useState([]);
+
+  useEffect(() => {
+    setPlayers([
+      {
+        id: 1,
+        name: 'Amy Farha',
+        avatar_url: 'https://s3.amazonaws.com/uifaces/faces/twitter/ladylexy/128.jpg',
+        rebuy: 0,
+        position: 0,
+        ref: React.createRef()
+      },
+      {
+        id: 2,
+        name: 'Chris Jackson 1',
+        avatar_url: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg',
+        rebuy: 0,
+        position: 0,
+        ref: React.createRef()
+      },
+    ]);
+  }, []);
+
+  const onPressFromLeft = (player) => {
+    Alert.alert(
+      'Rebuy',
+      `Confirma o rebuy do ${player.name}?`,
+      [
         {
-          list.map((item, i) => (
-            <Swipeable
-              key={i}
-              renderLeftActions={(progress, dragX) =>
-                <LeftActions progress={progress} dragX={dragX} player={item} />
-              }
-              renderRightActions={(progress, dragX) =>
-                <RightActions progress={progress} dragX={dragX} player={item} />
-              }
-            >
-              <ListItem
-                title={item.name}
-                subtitle={item.subtitle}
-                leftAvatar={{ source: { uri: item.avatar_url } }}
-                bottomDivider
-              />
-            </Swipeable>
-          ))
-        }
-      </View>
-    </ScrollView>
-  </SafeAreaView>
-);
+          text: 'Cancelar',
+          onPress: () => {
+            player.ref.current.close();
+          },
+          style: 'cancel',
+        },
+        {
+          text: 'Confirmar', onPress: () => {
+            player.rebuy += 1;
+            setPlayers([...players]);
+            player.ref.current.close();
+          }
+        },
+      ]
+    );
+  }
+  
+  const onPressFromRight = (player) => {
+    Alert.alert(
+      'Eliminação',
+      `Confirma a eliminação do ${player.name} na posição ${players.length}?.`,
+      [
+        {
+          text: 'Cancelar',
+          onPress: () => {
+            player.ref.current.close();
+          },
+          style: 'cancel',
+        },
+        {
+          text: 'Confirmar', onPress: () => {
+            player.position = players.length;
+            setPlayers([...players]);
+            player.ref.current.close();
+          }
+        },
+      ]
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <ScrollView>
+        <View>
+          {
+            players.map((player, i) => (
+              <Swipeable
+                key={i}
+                ref={player.ref}
+                overshootLeft={false}
+                overshootRight={false}
+                renderLeftActions={(progress, dragX) =>
+                  <LeftActions progress={progress} dragX={dragX} onPress={() => onPressFromLeft(player)} />
+                }
+                renderRightActions={(progress, dragX) =>
+                  <RightActions progress={progress} dragX={dragX} onPress={() => onPressFromRight(player)} />
+                }
+              >
+                <ListItem
+                  title={player.name}
+                  subtitle={`Rebuy: ${player.rebuy} | Posição: ${player.position}`}
+                  leftAvatar={{ source: { uri: player.avatar_url } }}
+                  bottomDivider
+                />
+              </Swipeable>
+            ))
+          }
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
 
 Ranking.navigationOptions = {
   title: 'Ranking',
@@ -138,7 +176,7 @@ export default Ranking;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#263238'
+    backgroundColor: '#e0dfdf'
   },
   leftAction: {
     backgroundColor: '#4caf50',
