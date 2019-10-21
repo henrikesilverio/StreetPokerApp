@@ -8,7 +8,7 @@ import {
   SafeAreaView,
   ScrollView
 } from 'react-native';
-import { ListItem } from 'react-native-elements';
+import { ListItem, Card } from 'react-native-elements';
 import { Swipeable } from 'react-native-gesture-handler';
 
 const LeftActions = ({ progress, dragX, onPress }) => {
@@ -68,14 +68,25 @@ const Ranking = ({ navigation }) => {
         avatar_url: 'https://s3.amazonaws.com/uifaces/faces/twitter/ladylexy/128.jpg',
         rebuy: 0,
         position: 0,
+        deleted: false,
         ref: React.createRef()
       },
       {
         id: 2,
-        name: 'Chris Jackson 1',
+        name: 'Chris Jackson',
         avatar_url: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg',
         rebuy: 0,
         position: 0,
+        deleted: false,
+        ref: React.createRef()
+      },
+      {
+        id: 3,
+        name: 'Alan Pearson',
+        avatar_url: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg',
+        rebuy: 0,
+        position: 0,
+        deleted: false,
         ref: React.createRef()
       },
     ]);
@@ -96,31 +107,36 @@ const Ranking = ({ navigation }) => {
         {
           text: 'Confirmar', onPress: () => {
             player.rebuy += 1;
-            setPlayers([...players]);
             player.ref.current.close();
+            setPlayers([...players]);
           }
         },
       ]
     );
   }
-  
+
   const onPressFromRight = (player) => {
+    const position = players.filter((player) => { 
+      return !player.deleted; 
+    }).length;
     Alert.alert(
       'Eliminação',
-      `Confirma a eliminação do ${player.name} na posição ${players.length}?.`,
+      `Confirma a eliminação do ${player.name} na posição ${position}?.`,
       [
         {
           text: 'Cancelar',
           onPress: () => {
             player.ref.current.close();
+            console.log(player.ref);
           },
           style: 'cancel',
         },
         {
           text: 'Confirmar', onPress: () => {
-            player.position = players.length;
-            setPlayers([...players]);
+            player.position = position;
+            player.deleted = true;
             player.ref.current.close();
+            setPlayers([...players]);            
           }
         },
       ]
@@ -131,29 +147,59 @@ const Ranking = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <ScrollView>
         <View>
-          {
-            players.map((player, i) => (
-              <Swipeable
-                key={i}
-                ref={player.ref}
-                overshootLeft={false}
-                overshootRight={false}
-                renderLeftActions={(progress, dragX) =>
-                  <LeftActions progress={progress} dragX={dragX} onPress={() => onPressFromLeft(player)} />
-                }
-                renderRightActions={(progress, dragX) =>
-                  <RightActions progress={progress} dragX={dragX} onPress={() => onPressFromRight(player)} />
-                }
-              >
-                <ListItem
-                  title={player.name}
-                  subtitle={`Rebuy: ${player.rebuy} | Posição: ${player.position}`}
-                  leftAvatar={{ source: { uri: player.avatar_url } }}
-                  bottomDivider
-                />
-              </Swipeable>
-            ))
-          }
+          <Card title="JOGANDO" containerStyle={styles.card}>
+            {
+              players.filter((player) => { return !player.deleted; }).map((player) => {
+                return (
+                  <Swipeable
+                    key={player.id}
+                    ref={player.ref}
+                    overshootLeft={false}
+                    overshootRight={false}
+                    renderLeftActions={(progress, dragX) =>
+                      <LeftActions progress={progress} dragX={dragX} onPress={() => onPressFromLeft(player)} />
+                    }
+                    renderRightActions={(progress, dragX) =>
+                      <RightActions progress={progress} dragX={dragX} onPress={() => onPressFromRight(player)} />
+                    }
+                  >
+                    <ListItem
+                      title={player.name}
+                      leftAvatar={{ source: { uri: player.avatar_url } }}
+                      badge={{
+                        value: `Rebuy ${player.rebuy}`,
+                        textStyle: { color: 'black', fontSize: 16 },
+                        badgeStyle: { padding: 12 },
+                        containerStyle: { marginTop: 0 },
+                        size: 'large',
+                        status: 'success'
+                      }}
+                      bottomDivider
+                    />
+                  </Swipeable>
+                )
+              })
+            }
+          </Card>
+        </View>
+        <View>
+          <Card title="ELIMINADOS" containerStyle={styles.card}>
+            {
+              players.filter((player) => { return player.deleted; })
+                .sort((a, b) => a.position > b.position)
+                .map((player) => {
+                return (
+                  <ListItem
+                    key={player.id}
+                    title={player.name}
+                    subtitle={`Rebuy ${player.rebuy} | Posição: ${player.position}`}
+                    leftAvatar={{ source: { uri: player.avatar_url } }}
+                    bottomDivider
+                  />
+                )
+              })
+            }
+          </Card>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -195,5 +241,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     padding: 20,
     fontSize: 20
+  },
+  card: {
+    marginHorizontal: 0, 
+    paddingHorizontal: 0
   }
 });
