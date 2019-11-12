@@ -8,8 +8,10 @@ import {
   SafeAreaView,
   ScrollView
 } from 'react-native';
-import { ListItem, Card } from 'react-native-elements';
+import { ListItem, Card, Icon } from 'react-native-elements';
 import { Swipeable } from 'react-native-gesture-handler';
+import { db } from "../services/firebase";
+import { _ } from 'underscore';
 
 const LeftActions = ({ progress, dragX, onPress }) => {
   const scale = dragX.interpolate({
@@ -57,39 +59,56 @@ const RightActions = ({ progress, dragX, onPress }) => {
   )
 }
 
-const Ranking = ({ navigation }) => {
-  const [players, setPlayers] = useState([]);
+const SaveHistoric = (historic) => {
+  Alert.alert(
+    'Salvar Historico',
+    `Confirma todas informações ?`,
+    [
+      {
+        text: 'Cancelar',
+        onPress: () => {},
+        style: 'cancel',
+      },
+      {
+        text: 'Confirmar', onPress: () => {}
+      },
+    ]
+  );
+}
+
+const Ranking = () => {
+  const [historic, setHistoric] = useState([]);
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth();
+  const start = new Date(currentYear, currentMonth, 1).getTime() / 1000;
+  const end = new Date(currentYear, currentMonth + 1, 0).getTime() / 1000;
+  const now = new Date().getTime() / 1000;
 
   useEffect(() => {
-    setPlayers([
-      {
-        id: 1,
-        name: 'Amy Farha',
-        avatar_url: 'https://s3.amazonaws.com/uifaces/faces/twitter/ladylexy/128.jpg',
-        rebuy: 0,
-        position: 0,
-        deleted: false,
-        ref: React.createRef()
-      },
-      {
-        id: 2,
-        name: 'Chris Jackson',
-        avatar_url: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg',
-        rebuy: 0,
-        position: 0,
-        deleted: false,
-        ref: React.createRef()
-      },
-      {
-        id: 3,
-        name: 'Alan Pearson',
-        avatar_url: 'https://s3.amazonaws.com/uifaces/faces/twitter/adhamdannaway/128.jpg',
-        rebuy: 0,
-        position: 0,
-        deleted: false,
-        ref: React.createRef()
-      },
-    ]);
+    db.collection("championships").where("active", "==", true).get().then((querySnapshot) => {
+      let championshipCurrent = {};
+      querySnapshot.forEach((doc) => {
+        if (doc.data().endDate.seconds >= now) {
+          championshipCurrent = doc.data();
+          championshipCurrent.id = doc.id;
+        }
+      });
+
+      if (championshipCurrent) {
+        const game = _.find(championshipCurrent.games, (game) => {
+          return start <= game.date.seconds && end >= game.date.seconds;
+        });
+
+        const historic = _.map(game.historic, (historic) => {
+          historic.deleted = false;
+          historic.ref = React.createRef();
+          return historic;
+        });
+        setHistoric(historic);
+      } else {
+        setHistoric([]);
+      }
+    });
   }, []);
 
   const onPressFromLeft = (player) => {
@@ -106,9 +125,9 @@ const Ranking = ({ navigation }) => {
         },
         {
           text: 'Confirmar', onPress: () => {
-            player.rebuy += 1;
             player.ref.current.close();
-            setPlayers([...players]);
+            player.retries += 1;
+            setHistoric([...historic]);
           }
         },
       ]
@@ -116,8 +135,8 @@ const Ranking = ({ navigation }) => {
   }
 
   const onPressFromRight = (player) => {
-    const position = players.filter((player) => { 
-      return !player.deleted; 
+    const position = historic.filter((player) => {
+      return !player.deleted;
     }).length;
     Alert.alert(
       'Eliminação',
@@ -127,16 +146,15 @@ const Ranking = ({ navigation }) => {
           text: 'Cancelar',
           onPress: () => {
             player.ref.current.close();
-            console.log(player.ref);
           },
           style: 'cancel',
         },
         {
           text: 'Confirmar', onPress: () => {
-            player.position = position;
+            player.ranking = position;
             player.deleted = true;
             player.ref.current.close();
-            setPlayers([...players]);            
+            setHistoric([...historic]);
           }
         },
       ]
@@ -149,25 +167,25 @@ const Ranking = ({ navigation }) => {
         <View>
           <Card title="JOGANDO" containerStyle={styles.card}>
             {
-              players.filter((player) => { return !player.deleted; }).map((player) => {
+              historic.filter((item) => { return !item.deleted; }).map((item) => {
                 return (
                   <Swipeable
-                    key={player.id}
-                    ref={player.ref}
+                    key={item.playerId}
+                    ref={item.ref}
                     overshootLeft={false}
                     overshootRight={false}
                     renderLeftActions={(progress, dragX) =>
-                      <LeftActions progress={progress} dragX={dragX} onPress={() => onPressFromLeft(player)} />
+                      <LeftActions progress={progress} dragX={dragX} onPress={() => onPressFromLeft(item)} />
                     }
                     renderRightActions={(progress, dragX) =>
-                      <RightActions progress={progress} dragX={dragX} onPress={() => onPressFromRight(player)} />
+                      <RightActions progress={progress} dragX={dragX} onPress={() => onPressFromRight(item)} />
                     }
                   >
                     <ListItem
-                      title={player.name}
-                      leftAvatar={{ source: { uri: player.avatar_url } }}
+                      title={item.player}
+                      leftAvatar={{ source: { uri: item.photo } }}
                       badge={{
-                        value: `Rebuy ${player.rebuy}`,
+                        value: `Rebuy ${item.retries}`,
                         textStyle: { color: 'black', fontSize: 16 },
                         badgeStyle: { padding: 12 },
                         containerStyle: { marginTop: 0 },
@@ -185,23 +203,33 @@ const Ranking = ({ navigation }) => {
         <View>
           <Card title="ELIMINADOS" containerStyle={styles.card}>
             {
-              players.filter((player) => { return player.deleted; })
-                .sort((a, b) => a.position > b.position)
-                .map((player) => {
-                return (
-                  <ListItem
-                    key={player.id}
-                    title={player.name}
-                    subtitle={`Rebuy ${player.rebuy} | Posição: ${player.position}`}
-                    leftAvatar={{ source: { uri: player.avatar_url } }}
-                    bottomDivider
-                  />
-                )
-              })
+              historic.filter((item) => { return item.deleted; })
+                .sort((a, b) => a.ranking > b.ranking)
+                .map((item) => {
+                  return (
+                    <ListItem
+                      key={item.playerId}
+                      title={item.player}
+                      subtitle={`Rebuy ${item.retries} | Posição: ${item.ranking}`}
+                      leftAvatar={{ source: { uri: item.photo } }}
+                      bottomDivider
+                    />
+                  )
+                })
             }
           </Card>
         </View>
       </ScrollView>
+      <Icon reverse
+        reverseColor='#212121'
+        name='save'
+        type='material'
+        size={30}
+        color='#ffc107'
+        containerStyle={styles.icon}
+        iconStyle={{ fontSize: 40 }}
+        onPress={SaveHistoric}
+      />
     </SafeAreaView>
   );
 }
@@ -243,7 +271,13 @@ const styles = StyleSheet.create({
     fontSize: 20
   },
   card: {
-    marginHorizontal: 0, 
+    marginHorizontal: 0,
     paddingHorizontal: 0
+  },
+  icon: {
+    position: 'absolute',
+    zIndex: 100,
+    bottom: 0,
+    right: 0
   }
 });
