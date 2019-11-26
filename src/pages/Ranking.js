@@ -13,6 +13,9 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { db } from "../services/firebase";
 import { _ } from 'underscore';
 
+let championshipCurrent = {};
+let gameCurrent = {};
+
 const LeftActions = ({ progress, dragX, onPress }) => {
   const scale = dragX.interpolate({
     inputRange: [0, 100],
@@ -66,11 +69,28 @@ const SaveHistoric = (historic) => {
     [
       {
         text: 'Cancelar',
-        onPress: () => {},
         style: 'cancel',
       },
       {
-        text: 'Confirmar', onPress: () => {}
+        text: 'Confirmar', onPress: () => {
+          gameCurrent.historic = _.map(historic, (historicPlayer) => {
+            return {
+              played: historicPlayer.played,
+              player: historicPlayer.player,
+              playerId: historicPlayer.playerId,
+              ranking: historicPlayer.ranking,
+              retries: historicPlayer.retries,
+            };
+          });
+          db.collection("championships")
+          .doc(championshipCurrent.id)
+          .update(championshipCurrent)
+          .then(result => {
+            console.log(result);
+          });
+          console.log(championshipCurrent.id);
+          console.log(championshipCurrent.games[4]);
+        }
       },
     ]
   );
@@ -86,7 +106,6 @@ const Ranking = () => {
 
   useEffect(() => {
     db.collection("championships").where("active", "==", true).get().then((querySnapshot) => {
-      let championshipCurrent = {};
       querySnapshot.forEach((doc) => {
         if (doc.data().endDate.seconds >= now) {
           championshipCurrent = doc.data();
@@ -95,14 +114,20 @@ const Ranking = () => {
       });
 
       if (championshipCurrent) {
-        const game = _.find(championshipCurrent.games, (game) => {
+        gameCurrent = _.find(championshipCurrent.games, (game) => {
           return start <= game.date.seconds && end >= game.date.seconds;
         });
 
-        const historic = _.map(game.historic, (historic) => {
-          historic.deleted = false;
-          historic.ref = React.createRef();
-          return historic;
+        const historic = _.map(gameCurrent.historic, (historic) => {
+          return {
+            played: historic.played,
+            player: historic.player,
+            playerId: historic.playerId,
+            ranking: historic.ranking,
+            retries: historic.retries,
+            deleted: false,
+            ref: React.createRef()
+          };
         });
         setHistoric(historic);
       } else {
@@ -228,7 +253,7 @@ const Ranking = () => {
         color='#ffc107'
         containerStyle={styles.icon}
         iconStyle={{ fontSize: 40 }}
-        onPress={SaveHistoric}
+        onPress={() => SaveHistoric(historic)}
       />
     </SafeAreaView>
   );
