@@ -83,11 +83,11 @@ const SaveHistoric = (historic) => {
             };
           });
           db.collection("championships")
-          .doc(championshipCurrent.id)
-          .update(championshipCurrent)
-          .then(result => {
-            console.log(result);
-          });
+            .doc(championshipCurrent.id)
+            .update(championshipCurrent)
+            .then(result => {
+              console.log(result);
+            });
           console.log(championshipCurrent.id);
           console.log(championshipCurrent.games[4]);
         }
@@ -105,7 +105,7 @@ const Ranking = () => {
   const now = new Date().getTime() / 1000;
 
   useEffect(() => {
-    db.collection("championships").where("active", "==", true).get().then((querySnapshot) => {
+    db.collection("championships").where("endDate", ">=", new Date()).get().then((querySnapshot) => {
       querySnapshot.forEach((doc) => {
         if (doc.data().endDate.seconds >= now) {
           championshipCurrent = doc.data();
@@ -192,7 +192,7 @@ const Ranking = () => {
         <View>
           <Card title="JOGANDO" containerStyle={styles.card}>
             {
-              historic.filter((item) => { return !item.deleted; }).map((item) => {
+              historic.filter((item) => { return !item.deleted && item.played; }).map((item) => {
                 return (
                   <Swipeable
                     key={item.playerId}
