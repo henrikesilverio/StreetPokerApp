@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
   View,
-  TouchableOpacity,
-  Animated,
   Alert,
   StyleSheet,
   SafeAreaView,
   ScrollView
 } from 'react-native';
+import LeftActions from '../components/LeftActions';
+import RightActions from '../components/RightActions';
 import { ListItem, Card, Icon } from 'react-native-elements';
 import { Swipeable } from 'react-native-gesture-handler';
 import { db } from "../services/firebase";
@@ -15,52 +15,6 @@ import { _ } from 'underscore';
 
 let championshipCurrent = {};
 let gameCurrent = {};
-
-const LeftActions = ({ progress, dragX, onPress }) => {
-  const scale = dragX.interpolate({
-    inputRange: [0, 100],
-    outputRange: [0, 1],
-    extrapolate: 'clamp'
-  });
-
-  return (
-    <TouchableOpacity onPress={onPress}>
-      <View style={styles.leftAction}>
-        <Animated.Text
-          style={[styles.actionText,
-          {
-            transform: [{ scale }]
-          }
-          ]}>
-          Rebuy
-        </Animated.Text>
-      </View>
-    </TouchableOpacity>
-  )
-}
-
-const RightActions = ({ progress, dragX, onPress }) => {
-  const scale = dragX.interpolate({
-    inputRange: [-100, 0],
-    outputRange: [1, 0],
-    extrapolate: 'clamp'
-  });
-
-  return (
-    <TouchableOpacity onPress={onPress}>
-      <View style={styles.rightAction}>
-        <Animated.Text
-          style={[styles.actionText,
-          {
-            transform: [{ scale }]
-          }
-          ]}>
-          Eliminar
-        </Animated.Text>
-      </View>
-    </TouchableOpacity>
-  )
-}
 
 const SaveHistoric = (historic) => {
   Alert.alert(
@@ -84,12 +38,7 @@ const SaveHistoric = (historic) => {
           });
           db.collection("championships")
             .doc(championshipCurrent.id)
-            .update(championshipCurrent)
-            .then(result => {
-              console.log(result);
-            });
-          console.log(championshipCurrent.id);
-          console.log(championshipCurrent.games[4]);
+            .update(championshipCurrent);
         }
       },
     ]
@@ -276,24 +225,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#e0dfdf'
-  },
-  leftAction: {
-    backgroundColor: '#4caf50',
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    padding: 3.5
-  },
-  rightAction: {
-    backgroundColor: '#f44336',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    padding: 3.5
-  },
-  actionText: {
-    color: '#fff',
-    fontWeight: '600',
-    padding: 20,
-    fontSize: 20
   },
   card: {
     marginHorizontal: 0,
